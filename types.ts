@@ -23,8 +23,13 @@ export type FitBERTStep = 'GOALS' | 'ADAPTATION' | 'COACHING';
 export type DocuBERTStep = 'UPLOAD' | 'INDEXING' | 'QA';
 export type TravelBERTStep = 'DESTINATION' | 'BOOKING' | 'CONCIERGE';
 export type FinanceBERTStep = 'SETUP' | 'PROVISIONING' | 'INTEGRATION';
+export type QuestBERTStep = 'OUTLINE' | 'WORLD_BUILDING' | 'DM_CHAT';
+export type DreamBERTStep = 'DREAM_INPUT' | 'ANALYSIS' | 'INTERPRETATION';
+export type ContractBERTStep = 'UPLOAD' | 'ANALYSIS' | 'QA';
+export type GitBERTStep = 'DETAILS' | 'ASSETS' | 'EDITOR';
+export type LaunchBERTStep = 'BRIEF' | 'CRAFTING' | 'LAUNCH_KIT';
 
-export type AppMode = 'TOOL_SUITE' | 'DARKBERT' | 'ARTIST' | 'STORYBERT' | 'CARBERT' | 'ANNIBERT' | 'BARTHOLOMEW' | 'LABERT' | 'LIVEBERT' | 'ROBERTA' | 'ROBERTO' | 'FITBERT' | 'DOCUBERT' | 'TRAVELBERT' | 'FINANCEBERT';
+export type AppMode = 'TOOL_SUITE' | 'DARKBERT' | 'ARTIST' | 'STORYBERT' | 'CARBERT' | 'ANNIBERT' | 'BARTHOLOMEW' | 'LABERT' | 'LIVEBERT' | 'ROBERTA' | 'ROBERTO' | 'FITBERT' | 'DOCUBERT' | 'TRAVELBERT' | 'FINANCEBERT' | 'QUESTBERT' | 'DREAMBERT' | 'CONTRACTBERT' | 'GITBERT' | 'LAUNCHBERT';
 
 export type ToolCosts = {
   [key in AppMode]?: number;
@@ -216,4 +221,79 @@ export interface PaymentGatewayConfig {
     }[];
     backendCode: string;
     frontendCode: string;
+}
+
+export interface Quest {
+    title: string;
+    type: string;
+    logEntry: string;
+    questGiver: {
+        name: string;
+        description: string;
+        location: string;
+    };
+    steps: {
+        order: number;
+        description: string;
+        objective: string;
+    }[];
+    rewards: {
+        experience: number;
+        gold: number;
+        items: string[];
+    };
+    failureConditions: string[];
+}
+
+export interface DreamInterpretation {
+    title: string;
+    summary: string;
+    symbols: {
+        name: string;
+        meaning: string;
+    }[];
+    emotionalTone: string;
+    questionsToConsider: string[];
+}
+
+export interface ContractAnalysis {
+    documentType: string;
+    parties: {
+        role: string;
+        name: string;
+    }[];
+    keyClauses: {
+        clause: string;
+        summary: string;
+    }[];
+    obligations: {
+        party: string;
+        obligation: string;
+    }[];
+    potentialRisks: string[];
+}
+
+export interface ReadmeContent {
+    projectName: string;
+    badges: string[];
+    description: string;
+    installation: string;
+    usage: string;
+    license: string;
+}
+
+export interface LaunchAssets {
+    productName: string;
+    emailAnnouncement: {
+        subject: string;
+        body: string;
+    };
+    socialPosts: {
+        platform: 'Twitter' | 'LinkedIn';
+        content: string;
+    }[];
+    pressRelease: {
+        headline: string;
+        body: string;
+    };
 }

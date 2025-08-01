@@ -18,6 +18,11 @@ export const TOOL_COSTS: ToolCosts = {
   'DOCUBERT': 2,
   'TRAVELBERT': 6,
   'FINANCEBERT': 15,
+  'QUESTBERT': 4,
+  'DREAMBERT': 3,
+  'CONTRACTBERT': 10,
+  'GITBERT': 5,
+  'LAUNCHBERT': 7,
 };
 
 
@@ -162,4 +167,59 @@ export const BACKEND_PROVISIONING_STEPS = [
   { progress: 80, message: "Generating React frontend components..." },
   { progress: 95, message: "Compiling integration documentation..." },
   { progress: 100, message: "Provisioning complete! Your payment gateway code is ready." },
+];
+
+export const WORLD_BUILDING_STEPS = [
+  { progress: 0, message: "Ready to build." },
+  { progress: 10, message: "Laying down ley lines..." },
+  { progress: 25, message: "Fleshing out NPC backstories..." },
+  { progress: 40, message: "Placing monster spawns..." },
+  { progress: 60, message: "Hiding treasure chests and secrets..." },
+  { progress: 80, message: "Writing flavorful item descriptions..." },
+  { progress: 95, message: "Drawing the world map..." },
+  { progress: 100, message: "World-building complete! The adventure is ready." },
+];
+
+export const SUBCONSCIOUS_ANALYSIS_STEPS = [
+  { progress: 0, message: "Ready to analyze." },
+  { progress: 10, message: "Accessing oneiric archives..." },
+  { progress: 25, message: "Decoding symbolic language..." },
+  { progress: 40, message: "Mapping emotional undercurrents..." },
+  { progress: 60, message: "Cross-referencing archetypal patterns..." },
+  { progress: 80, message: "Synthesizing narrative threads..." },
+  { progress: 95, message: "Filtering conscious residue..." },
+  { progress: 100, message: "Subconscious analysis complete. The interpretation is ready." },
+];
+
+export const CONTRACT_ANALYSIS_STEPS = [
+  { progress: 0, message: "Ready to analyze." },
+  { progress: 10, message: "Parsing document structure..." },
+  { progress: 25, message: "Identifying parties and definitions..." },
+  { progress: 40, message: "Extracting key clauses (Liability, Termination, etc.)..." },
+  { progress: 60, message: "Analyzing party obligations and responsibilities..." },
+  { progress: 80, message: "Scanning for potential risks and ambiguities..." },
+  { progress: 95, message: "Compiling final analysis report..." },
+  { progress: 100, message: "Analysis complete! Ready for your questions." },
+];
+
+export const ASSET_GENERATION_STEPS = [
+  { progress: 0, message: "Ready to generate." },
+  { progress: 10, message: "Analyzing repository details..." },
+  { progress: 25, message: "Fetching appropriate badges..." },
+  { progress: 40, message: "Structuring README sections..." },
+  { progress: 60, message: "Writing installation and usage guides..." },
+  { progress: 80, message: "Formatting code blocks..." },
+  { progress: 95, message: "Adding license information..." },
+  { progress: 100, message: "README generation complete!" },
+];
+
+export const MESSAGE_CRAFTING_STEPS = [
+  { progress: 0, message: "Ready to launch." },
+  { progress: 10, message: "Analyzing product brief..." },
+  { progress: 25, message: "Defining key value propositions..." },
+  { progress: 40, message: "Drafting email announcement..." },
+  { progress: 60, message: "Crafting social media posts..." },
+  { progress: 80, message: "Writing press release..." },
+  { progress: 95, message: "Final review and polish..." },
+  { progress: 100, message: "Launch kit is ready!" },
 ];

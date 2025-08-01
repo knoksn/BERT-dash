@@ -17,6 +17,11 @@ import FitbertStudio from './components/FitbertStudio';
 import DocuBertAnalyzer from './components/DocuBertAnalyzer';
 import TravelBertPlanner from './components/TravelBertPlanner';
 import FinanceBertGateway from './components/FinanceBertGateway';
+import QuestBertGenerator from './components/QuestBertGenerator';
+import DreamBertAnalyzer from './components/DreamBertAnalyzer';
+import ContractBertAnalyzer from './components/ContractBertAnalyzer';
+import GitBertPreviewer from './components/GitBertPreviewer';
+import LaunchBertLauncher from './components/LaunchBertLauncher';
 import { CreditProvider, useCredits } from './contexts/CreditContext';
 import { ArrowLeftIcon, CoinsIcon, PlusIcon, CreditCardIcon } from './components/shared/IconComponents';
 
@@ -39,6 +44,11 @@ const Header: React.FC<{ mode: AppMode, onBack: () => void }> = ({ mode, onBack 
         DOCUBERT: 'DocuBERT Analyzer',
         TRAVELBERT: 'TravelBERT Planner',
         FINANCEBERT: 'FinanceBERT Gateway',
+        QUESTBERT: 'QuestBERT Generator',
+        DREAMBERT: 'DreamBERT Analyzer',
+        CONTRACTBERT: 'ContractBERT Analyzer',
+        GITBERT: 'GitBERT Previewer',
+        LAUNCHBERT: 'LaunchBERT Quick Launcher',
     };
     const subtitles = {
         TOOL_SUITE: 'Select a tool to get started',
@@ -56,6 +66,11 @@ const Header: React.FC<{ mode: AppMode, onBack: () => void }> = ({ mode, onBack 
         DOCUBERT: 'Summarize and Chat with Your Documents',
         TRAVELBERT: 'AI Itinerary Generator & Travel Concierge',
         FINANCEBERT: 'Generate Code for Payment Integrations',
+        QUESTBERT: 'Generate RPG quests and chat with an AI Dungeon Master',
+        DREAMBERT: 'Get an AI-powered interpretation of your dreams',
+        CONTRACTBERT: 'Analyze legal documents and ask clarifying questions',
+        GITBERT: 'Generate professional GitHub README files',
+        LAUNCHBERT: 'Generate marketing assets for your product launch',
     }
 
     return (
@@ -140,6 +155,16 @@ const AppContent: React.FC = () => {
                 return <TravelBertPlanner />;
             case 'FINANCEBERT':
                 return <FinanceBertGateway />;
+            case 'QUESTBERT':
+                return <QuestBertGenerator />;
+            case 'DREAMBERT':
+                return <DreamBertAnalyzer />;
+            case 'CONTRACTBERT':
+                return <ContractBertAnalyzer />;
+            case 'GITBERT':
+                return <GitBertPreviewer />;
+            case 'LAUNCHBERT':
+                return <LaunchBertLauncher />;
             case 'TOOL_SUITE':
             default:
                 return <ModeSelectionView onModeSelect={handleModeSelect} />;

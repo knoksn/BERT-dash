@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Chat, Content } from "@google/genai";
-import { FineTuningData, ScamAnalysisResult, StoryPremise, VehicleProfile, AnniversaryPlan, ResearchBrief, CaseBrief, ProductionPlan, ResumeProfile, RecipeProfile, WorkoutPlan, DocumentSummary, Itinerary, PaymentGatewayConfig } from '../types';
+import { FineTuningData, ScamAnalysisResult, StoryPremise, VehicleProfile, AnniversaryPlan, ResearchBrief, CaseBrief, ProductionPlan, ResumeProfile, RecipeProfile, WorkoutPlan, DocumentSummary, Itinerary, PaymentGatewayConfig, Quest, DreamInterpretation, ContractAnalysis, ReadmeContent, LaunchAssets } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
@@ -1375,6 +1375,477 @@ export const createFinanceBertChatSession = (config: PaymentGatewayConfig): Chat
         ],
         config: {
             systemInstruction: FINANCEBERT_CHAT_SYSTEM_INSTRUCTION,
+        },
+    });
+};
+
+// --- QuestBERT RPG Quest Generator Service ---
+
+const QUEST_PROMPT = `
+You are QuestBERT, an expert AI Dungeon Master and game designer. Your task is to take a user's requirements and generate a detailed, structured, and engaging RPG quest.
+
+Based on the provided details (quest type, setting, difficulty), flesh out a JSON object using the specified schema. Be creative and ensure the quest is logical and compelling. The difficulty should influence the number of steps, the complexity of objectives, and the value of the rewards.
+`;
+
+const questSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: "A catchy and thematic title for the quest." },
+        type: { type: Type.STRING, description: "The type of quest provided by the user (e.g., 'Monster Hunt', 'Mystery')." },
+        logEntry: { type: Type.STRING, description: "The text that would appear in a player's quest log, summarizing the goal." },
+        questGiver: {
+            type: Type.OBJECT,
+            properties: {
+                name: { type: Type.STRING, description: "The name of the NPC quest giver." },
+                description: { type: Type.STRING, description: "A 1-2 sentence description of the quest giver's appearance and personality." },
+                location: { type: Type.STRING, description: "Where the player can find this quest giver." },
+            },
+            required: ['name', 'description', 'location'],
+        },
+        steps: {
+            type: Type.ARRAY,
+            description: "A list of steps to complete the quest.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    order: { type: Type.INTEGER, description: "The sequential order of the step." },
+                    description: { type: Type.STRING, description: "A narrative description of what the player needs to do for this step." },
+                    objective: { type: Type.STRING, description: "A clear, concise objective for the UI (e.g., 'Slay 10 Goblins', 'Speak to the Blacksmith')." },
+                },
+                required: ['order', 'description', 'objective'],
+            },
+        },
+        rewards: {
+            type: Type.OBJECT,
+            properties: {
+                experience: { type: Type.INTEGER, description: "The amount of experience points awarded." },
+                gold: { type: Type.INTEGER, description: "The amount of gold/currency awarded." },
+                items: {
+                    type: Type.ARRAY,
+                    description: "A list of item names awarded as part of the reward.",
+                    items: { type: Type.STRING },
+                },
+            },
+            required: ['experience', 'gold', 'items'],
+        },
+        failureConditions: {
+            type: Type.ARRAY,
+            description: "A list of conditions under which the quest would fail (e.g., 'The quest giver is killed', 'The artifact is destroyed').",
+            items: { type: Type.STRING },
+        },
+    },
+    required: ['title', 'type', 'logEntry', 'questGiver', 'steps', 'rewards', 'failureConditions'],
+};
+
+export const generateQuest = async (details: {questType: string, setting: string, difficulty: string}): Promise<Quest> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `${QUEST_PROMPT}\n\nGenerate a quest based on these details:\n${JSON.stringify(details, null, 2)}`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: questSchema,
+            },
+        });
+        
+        const jsonString = response.text.trim();
+        const data = JSON.parse(jsonString);
+
+        if (!data.title || !data.questGiver || !Array.isArray(data.steps)) {
+             throw new Error("Invalid data structure received from API for quest.");
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Error generating quest:", error);
+        throw new Error("Failed to generate a quest. The API might have returned an unexpected format.");
+    }
+};
+
+const QUESTBERT_CHAT_SYSTEM_INSTRUCTION = `
+You are QuestBERT, an expert AI Dungeon Master. You are creative, knowledgeable about storytelling, and full of ideas. You are helping a game designer refine the quest you just generated.
+
+Directives:
+- Your knowledge is focused on the provided quest outline.
+- Help the user brainstorm dialogue for the quest giver, add more steps, create interesting twists, or suggest alternative rewards.
+- Be enthusiastic and collaborative. Use phrases like "What if..." or "An interesting idea! We could also...".
+- If asked for something outside of game design (e.g., programming help), politely steer the conversation back to quest creation.
+`;
+
+export const createQuestBertChatSession = (quest: Quest): Chat => {
+    return ai.chats.create({
+        model: 'gemini-2.5-flash',
+        history: [
+            {
+                role: 'user',
+                parts: [{ text: `I'm ready to work on the quest, "${quest.title}".`}]
+            },
+            {
+                role: 'model',
+                parts: [{ text: `Excellent! The adventure is laid out before you. How can I, the Dungeon Master, help you refine this tale? We can talk about the quest giver, the steps, the rewards... anything you like.`}]
+            }
+        ],
+        config: {
+            systemInstruction: QUESTBERT_CHAT_SYSTEM_INSTRUCTION,
+        },
+    });
+};
+
+// --- DreamBERT Dream Interpreter Service ---
+
+const DREAM_INTERPRETATION_PROMPT = `
+You are DreamBERT, an AI assistant specializing in dream interpretation, drawing upon Jungian archetypes, psychoanalytic theory, and common cultural symbols. Your task is to analyze a user's dream description and provide a structured, insightful, and non-prescriptive interpretation.
+
+Generate a JSON object with the specified schema based on the user's dream. Be creative and thoughtful. Avoid making definitive statements; instead, offer possibilities and questions for reflection.
+`;
+
+const dreamInterpretationSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: "A short, evocative title for the dream (e.g., 'The Endless Library', 'Falling Through Clouds')." },
+        summary: { type: Type.STRING, description: "A 2-3 sentence summary of the dream's narrative and feeling." },
+        symbols: {
+            type: Type.ARRAY,
+            description: "A list of 3-5 key symbols or elements from the dream and their potential meanings.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    name: { type: Type.STRING, description: "The name of the symbol (e.g., 'Water', 'A Key', 'Flying')." },
+                    meaning: { type: Type.STRING, description: "A brief interpretation of what this symbol could represent in the context of the dream." },
+                },
+                required: ['name', 'meaning'],
+            },
+        },
+        emotionalTone: { type: Type.STRING, description: "The predominant emotional feeling or tone of the dream (e.g., 'Anxiety and urgency', 'Peaceful curiosity', 'Joyful liberation')." },
+        questionsToConsider: {
+            type: Type.ARRAY,
+            description: "A list of 2-3 open-ended questions to help the user reflect on the dream's connection to their waking life.",
+            items: { type: Type.STRING },
+        },
+    },
+    required: ['title', 'summary', 'symbols', 'emotionalTone', 'questionsToConsider'],
+};
+
+export const generateDreamInterpretation = async (dreamDescription: string): Promise<DreamInterpretation> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `${DREAM_INTERPRETATION_PROMPT}\n\nInterpret this dream:\n"${dreamDescription}"`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: dreamInterpretationSchema,
+            },
+        });
+        
+        const jsonString = response.text.trim();
+        const data = JSON.parse(jsonString);
+
+        if (!data.title || !data.summary || !Array.isArray(data.symbols)) {
+             throw new Error("Invalid data structure received from API for dream interpretation.");
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Error generating dream interpretation:", error);
+        throw new Error("Failed to generate a dream interpretation. The API might have returned an unexpected format.");
+    }
+};
+
+const DREAMBERT_CHAT_SYSTEM_INSTRUCTION = `
+You are DreamBERT, an AI dream interpreter. You are wise, insightful, and slightly mysterious. You speak in a calm, thoughtful tone. You are helping a user explore the meaning of their dream based on an initial interpretation.
+
+Directives:
+- **IMPORTANT**: Your first response must include this disclaimer: "Remember, I am an AI and not a therapist. This is a space for creative exploration, not professional psychological advice."
+- Your knowledge is focused on the provided dream interpretation.
+- Help the user delve deeper into the symbols and feelings of their dream.
+- Ask gentle, probing questions. Never state a definitive meaning; always use phrases like "Perhaps this could represent..." or "How does that feeling connect to...".
+- If asked for something outside of dream analysis (e.g., medical advice, lottery numbers), politely decline and guide the conversation back to the dream.
+`;
+
+export const createDreamBertChatSession = (interpretation: DreamInterpretation): Chat => {
+    return ai.chats.create({
+        model: 'gemini-2.5-flash',
+        config: {
+            systemInstruction: DREAMBERT_CHAT_SYSTEM_INSTRUCTION,
+        },
+    });
+};
+
+// --- ContractBERT Legal Document Analyzer Service ---
+
+const CONTRACT_ANALYSIS_PROMPT = `
+You are ContractBERT, an expert AI legal analyst. Your task is to analyze a legal document provided by the user and generate a structured, easy-to-understand summary. You are NOT a lawyer and you must NOT give legal advice.
+
+Analyze the provided legal text and format it into a JSON object using the specified schema. Identify the document type, the parties involved, summarize key clauses, list the obligations of each party, and highlight potential risks or areas that may warrant further attention.
+`;
+
+const contractAnalysisSchema = {
+    type: Type.OBJECT,
+    properties: {
+        documentType: { type: Type.STRING, description: "The likely type of document (e.g., 'Residential Lease Agreement', 'Service Agreement', 'Non-Disclosure Agreement')." },
+        parties: {
+            type: Type.ARRAY,
+            description: "The parties involved in the contract.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    role: { type: Type.STRING, description: "The role of the party (e.g., 'Landlord', 'Tenant', 'Client', 'Service Provider')." },
+                    name: { type: Type.STRING, description: "The name of the party, as stated in the document." },
+                },
+                required: ['role', 'name'],
+            },
+        },
+        keyClauses: {
+            type: Type.ARRAY,
+            description: "A list and summary of the most important clauses.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    clause: { type: Type.STRING, description: "The name or title of the clause (e.g., 'Term and Termination', 'Liability', 'Confidentiality')." },
+                    summary: { type: Type.STRING, description: "A brief, plain-language summary of what the clause means." },
+                },
+                required: ['clause', 'summary'],
+            },
+        },
+        obligations: {
+            type: Type.ARRAY,
+            description: "A list of key obligations for each party.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    party: { type: Type.STRING, description: "The party who has the obligation (identified by role, e.g., 'Tenant')." },
+                    obligation: { type: Type.STRING, description: "A description of the specific duty or action required." },
+                },
+                required: ['party', 'obligation'],
+            },
+        },
+        potentialRisks: {
+            type: Type.ARRAY,
+            description: "A list of potential risks, ambiguities, or clauses the user might want to review carefully.",
+            items: { type: Type.STRING },
+        },
+    },
+    required: ['documentType', 'parties', 'keyClauses', 'obligations', 'potentialRisks'],
+};
+
+export const analyzeContract = async (contractText: string): Promise<ContractAnalysis> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `${CONTRACT_ANALYSIS_PROMPT}\n\nAnalyze this contract:\n"${contractText}"`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: contractAnalysisSchema,
+            },
+        });
+        
+        const jsonString = response.text.trim();
+        const data = JSON.parse(jsonString);
+
+        if (!data.documentType || !Array.isArray(data.parties) || !Array.isArray(data.keyClauses)) {
+             throw new Error("Invalid data structure received from API for contract analysis.");
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Error analyzing contract:", error);
+        throw new Error("Failed to analyze the contract. The API might have returned an unexpected format.");
+    }
+};
+
+const CONTRACTBERT_CHAT_SYSTEM_INSTRUCTION = `
+You are ContractBERT, an AI legal document assistant. You are NOT a lawyer and CANNOT provide legal advice. Your purpose is to help the user understand the content of the document they provided.
+
+Directives:
+- **IMPORTANT**: Your first response in any conversation MUST begin with the disclaimer: "DISCLAIMER: I am an AI assistant, not a lawyer. This is for informational purposes only and does not constitute legal advice. Please consult a qualified legal professional for advice on your situation."
+- Your knowledge is strictly limited to the contract text provided by the user.
+- Answer questions by quoting or summarizing relevant sections of the contract.
+- If asked for an opinion, for advice on what to do, or to predict an outcome, you MUST decline and repeat the disclaimer.
+- You can explain what clauses mean IN THE CONTEXT of the document, but not their legal enforceability.
+- Maintain a helpful, neutral, and professional tone.
+`;
+
+export const createContractBertChatSession = (contractText: string): Chat => {
+    const history: Content[] = [
+        { 
+            role: 'user', 
+            parts: [{ text: `Here is the contract I want to discuss:\n\n---\n\n${contractText}` }] 
+        },
+    ];
+    return ai.chats.create({
+        model: 'gemini-2.5-flash',
+        history,
+        config: {
+            systemInstruction: CONTRACTBERT_CHAT_SYSTEM_INSTRUCTION,
+        },
+    });
+};
+
+// --- GitBERT GitHub Previewer Service ---
+
+const README_PROMPT = `
+You are GitBERT, an AI assistant for developers that specializes in creating high-quality GitHub README.md files. Your task is to take a user's project details and generate a structured, professional README in Markdown format.
+
+Generate a JSON object with the specified schema.
+- **Badges**: Generate relevant Markdown badges (e.g., license, build status placeholder, framework version).
+- **Installation & Usage**: Provide clear, generic code blocks for installation and usage that a developer can easily edit.
+- **License**: Mention a common open-source license like MIT.
+`;
+
+const readmeContentSchema = {
+    type: Type.OBJECT,
+    properties: {
+        projectName: { type: Type.STRING, description: "The name of the project." },
+        badges: {
+            type: Type.ARRAY,
+            description: "A list of 3-4 relevant Markdown badges.",
+            items: { type: Type.STRING }
+        },
+        description: { type: Type.STRING, description: "A well-written, 2-3 paragraph description of the project based on the user's input." },
+        installation: { type: Type.STRING, description: "A Markdown section with code blocks for installing dependencies." },
+        usage: { type: Type.STRING, description: "A Markdown section with code blocks demonstrating how to run or use the project." },
+        license: { type: Type.STRING, description: "A brief statement about the project's license (e.g., 'This project is licensed under the MIT License.')." }
+    },
+    required: ['projectName', 'badges', 'description', 'installation', 'usage', 'license'],
+};
+
+export const generateReadmeContent = async (details: { name: string; description: string; tech: string[] }): Promise<ReadmeContent> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `${README_PROMPT}\n\nGenerate a README for this project:\n${JSON.stringify(details, null, 2)}`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: readmeContentSchema,
+            },
+        });
+        
+        const jsonString = response.text.trim();
+        const data = JSON.parse(jsonString);
+
+        if (!data.projectName || !Array.isArray(data.badges) || !data.description) {
+            throw new Error("Invalid data structure received from API for README content.");
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Error generating README content:", error);
+        throw new Error("Failed to generate README content. The API might have returned an unexpected format.");
+    }
+};
+
+const GITBERT_CHAT_SYSTEM_INSTRUCTION = `
+You are GitBERT, an AI developer relations assistant. You are helpful, knowledgeable about software development best practices, and an expert in Markdown. You are helping a user refine a generated README.md file.
+
+Directives:
+- Your knowledge is focused on the provided README content.
+- Help the user add new sections (e.g., 'Contributing', 'API Reference'), rewrite existing sections for clarity, or add more badges.
+- When providing code or Markdown, wrap it in appropriate fences.
+- Maintain a helpful, slightly technical, and encouraging tone.
+`;
+
+export const createGitBertChatSession = (readme: string): Chat => {
+    return ai.chats.create({
+        model: 'gemini-2.5-flash',
+        history: [
+            { role: 'user', parts: [{ text: `Here is the README.md file I'm working on:\n\n---\n\n${readme}` }] },
+            { role: 'model', parts: [{ text: "Looks like a great start! I've loaded the README. How can I help you improve it?" }] }
+        ],
+        config: {
+            systemInstruction: GITBERT_CHAT_SYSTEM_INSTRUCTION,
+        },
+    });
+};
+
+// --- LaunchBERT Quick Launcher Service ---
+
+const LAUNCH_ASSETS_PROMPT = `
+You are LaunchBERT, an AI marketing and communications expert specializing in product launches. Your task is to take a user's product brief and generate a structured set of launch assets.
+
+Generate a JSON object with the specified schema. The copy should be professional, engaging, and tailored to the target audience.
+- **Email**: Write a clear, exciting announcement email.
+- **Social Posts**: Create a concise, punchy post for Twitter/X and a slightly more detailed, professional post for LinkedIn.
+- **Press Release**: Write a standard short-form press release with a strong headline and a summary paragraph.
+`;
+
+const launchAssetsSchema = {
+    type: Type.OBJECT,
+    properties: {
+        productName: { type: Type.STRING },
+        emailAnnouncement: {
+            type: Type.OBJECT,
+            properties: {
+                subject: { type: Type.STRING },
+                body: { type: Type.STRING, description: "The full body of the email, formatted with newlines." }
+            },
+            required: ['subject', 'body']
+        },
+        socialPosts: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    platform: { type: Type.STRING, enum: ['Twitter', 'LinkedIn'] },
+                    content: { type: Type.STRING }
+                },
+                required: ['platform', 'content']
+            }
+        },
+        pressRelease: {
+            type: Type.OBJECT,
+            properties: {
+                headline: { type: Type.STRING },
+                body: { type: Type.STRING, description: "The body of the press release, typically 2-3 paragraphs." }
+            },
+            required: ['headline', 'body']
+        }
+    },
+    required: ['productName', 'emailAnnouncement', 'socialPosts', 'pressRelease'],
+};
+
+export const generateLaunchAssets = async (details: { name: string; pitch: string; audience: string }): Promise<LaunchAssets> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `${LAUNCH_ASSETS_PROMPT}\n\nGenerate launch assets for this product:\n${JSON.stringify(details, null, 2)}`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: launchAssetsSchema,
+            },
+        });
+        
+        const jsonString = response.text.trim();
+        const data = JSON.parse(jsonString);
+
+        if (!data.productName || !data.emailAnnouncement || !Array.isArray(data.socialPosts)) {
+            throw new Error("Invalid data structure received from API for launch assets.");
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Error generating launch assets:", error);
+        throw new Error("Failed to generate launch assets. The API might have returned an unexpected format.");
+    }
+};
+
+const LAUNCHBERT_CHAT_SYSTEM_INSTRUCTION = `
+You are LaunchBERT, an AI marketing expert. You are energetic, creative, and strategic. You are helping a user refine the launch assets you just generated.
+
+Directives:
+- Your knowledge is focused on the provided launch assets (email, social posts, press release).
+- Help the user change the tone (e.g., 'make it more formal', 'add some humor'), generate alternative headlines or social media posts, or expand on certain points.
+- Be supportive and full of ideas to help make their launch a success.
+`;
+
+export const createLaunchBertChatSession = (assets: LaunchAssets): Chat => {
+    return ai.chats.create({
+        model: 'gemini-2.5-flash',
+        history: [
+            { role: 'user', parts: [{ text: `I'm reviewing the launch kit for ${assets.productName}.` }] },
+            { role: 'model', parts: [{ text: "Fantastic! I'm excited to help you get the word out. I have all the assets right here. What's on your mind?" }] }
+        ],
+        config: {
+            systemInstruction: LAUNCHBERT_CHAT_SYSTEM_INSTRUCTION,
         },
     });
 };

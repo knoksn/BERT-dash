@@ -3,7 +3,7 @@ import React from 'react';
 import { AppMode } from '../types';
 import { TOOL_COSTS } from '../constants';
 import { useCredits } from '../contexts/CreditContext';
-import { BrainCircuitIcon, ShieldCheckIcon, FeatherIcon, WrenchIcon, GiftIcon, BookOpenIcon, ScaleIcon, ClipboardListIcon, BriefcaseIcon, ChefHatIcon, DumbbellIcon, FileTextIcon, GlobeIcon, CoinsIcon, LockIcon, CreditCardIcon } from './shared/IconComponents';
+import { BrainCircuitIcon, ShieldCheckIcon, FeatherIcon, WrenchIcon, GiftIcon, BookOpenIcon, ScaleIcon, ClipboardListIcon, BriefcaseIcon, ChefHatIcon, DumbbellIcon, FileTextIcon, GlobeIcon, CoinsIcon, LockIcon, CreditCardIcon, ScrollIcon, MoonIcon, FileCheckIcon, GithubIcon, MegaphoneIcon } from './shared/IconComponents';
 
 interface ModeSelectionViewProps {
   onModeSelect: (mode: AppMode) => void;
@@ -52,6 +52,7 @@ const tools: { mode: AppMode, icon: React.ElementType, title: string, descriptio
     { mode: 'ANNIBERT', icon: GiftIcon, title: 'AnniBERT Planner', description: 'Get personalized ideas for gifts, activities, and messages for any occasion.' },
     { mode: 'BARTHOLOMEW', icon: BookOpenIcon, title: "BERTholomew's Library", description: 'Generate research briefs on historical topics and explore them with an AI historian.' },
     { mode: 'LABERT', icon: ScaleIcon, title: 'LaBERT Legal Assistant', description: 'Analyze legal situations and documents. For research purposes only.' },
+    { mode: 'CONTRACTBERT', icon: FileCheckIcon, title: 'ContractBERT Analyzer', description: 'Analyze legal documents to identify key clauses, obligations, and risks.' },
     { mode: 'LIVEBERT', icon: ClipboardListIcon, title: 'LiveBERT Stagehand', description: 'Generate production plans for live events and chat with an AI producer.' },
     { mode: 'ROBERTA', icon: BriefcaseIcon, title: "RoBERTa's Career Clinic", description: 'Optimize your resume and practice for interviews with an AI career coach.' },
     { mode: 'ROBERTO', icon: ChefHatIcon, title: "RoBERTo's Kitchen", description: 'Generate recipes from ingredients you have and get cooking assistance.' },
@@ -59,6 +60,10 @@ const tools: { mode: AppMode, icon: React.ElementType, title: string, descriptio
     { mode: 'DOCUBERT', icon: FileTextIcon, title: 'DocuBERT Analyzer', description: 'Paste any text to get a summary and ask questions about its content.' },
     { mode: 'TRAVELBERT', icon: GlobeIcon, title: 'TravelBERT Planner', description: 'Get a custom travel itinerary and chat with an AI travel concierge.' },
     { mode: 'FINANCEBERT', icon: CreditCardIcon, title: 'FinanceBERT Gateway', description: 'Generate backend and frontend code for popular payment services.' },
+    { mode: 'QUESTBERT', icon: ScrollIcon, title: 'QuestBERT Generator', description: 'Generate RPG quests and chat with an AI Dungeon Master.' },
+    { mode: 'DREAMBERT', icon: MoonIcon, title: 'DreamBERT Analyzer', description: 'Describe your dream to receive an AI-powered interpretation and analysis.' },
+    { mode: 'GITBERT', icon: GithubIcon, title: 'GitBERT Previewer', description: 'Generate a professional README.md file for your GitHub repository.' },
+    { mode: 'LAUNCHBERT', icon: MegaphoneIcon, title: 'LaunchBERT Launcher', description: 'Create a complete set of marketing assets for your next product launch.' },
 ];
 
 const ModeSelectionView: React.FC<ModeSelectionViewProps> = ({ onModeSelect }) => {
@@ -76,7 +81,7 @@ const ModeSelectionView: React.FC<ModeSelectionViewProps> = ({ onModeSelect }) =
   return (
     <div className="w-full max-w-7xl mx-auto p-4 md:p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {tools.map(tool => {
+        {tools.sort((a, b) => a.title.localeCompare(b.title)).map(tool => {
           const cost = TOOL_COSTS[tool.mode] ?? 0;
           const isLocked = credits < cost;
           return (
