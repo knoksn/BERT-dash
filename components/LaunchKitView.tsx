@@ -1,9 +1,10 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Chat } from '@google/genai';
 import { createLaunchBertChatSession } from '../services/geminiService';
 import { ChatMessage, LaunchAssets } from '../types';
-import { ChatBubbleIcon, SendIcon, MegaphoneIcon, CheckIcon } from './shared/IconComponents';
+import { ChatBubbleIcon, SendIcon, MegaphoneIcon, CheckIcon, CopyIcon } from './shared/IconComponents';
 import LoadingSpinner from './shared/LoadingSpinner';
 
 const AssetBlock: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
@@ -23,7 +24,7 @@ const AssetBlock: React.FC<{ title: string; children: React.ReactNode }> = ({ ti
             <div className="flex justify-between items-center mb-1">
                 <h4 className="font-semibold text-accent/80 text-sm">{title}</h4>
                 <button onClick={handleCopy} className="text-xs text-dark-text-secondary hover:text-accent flex items-center gap-1.5 transition-colors">
-                    {copied ? <CheckIcon className="w-4 h-4 text-green-400" /> : <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>}
+                    {copied ? <CheckIcon className="w-4 h-4 text-green-400" /> : <CopyIcon className="w-4 h-4" />}
                     {copied ? 'Copied!' : 'Copy'}
                 </button>
             </div>

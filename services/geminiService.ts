@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type, Chat, Content } from "@google/genai";
 import { FineTuningData, ScamAnalysisResult, StoryPremise, VehicleProfile, AnniversaryPlan, ResearchBrief, CaseBrief, ProductionPlan, ResumeProfile, RecipeProfile, WorkoutPlan, DocumentSummary, Itinerary, PaymentGatewayConfig, Quest, DreamInterpretation, ContractAnalysis, ReadmeContent, LaunchAssets } from '../types';
 
@@ -548,20 +549,8 @@ Directives:
 `;
 
 export const createBartholomewChatSession = (brief: ResearchBrief): Chat => {
-    const history: Content[] = [
-        { 
-            role: 'user', 
-            parts: [{ text: `Professor, I'm ready to begin my inquiry into ${brief.topic}.` }] 
-        },
-        {
-            role: 'model',
-            parts: [{ text: `An excellent topic. I have the research brief before me. What is your first question?` }]
-        }
-    ];
-
     return ai.chats.create({
         model: 'gemini-2.5-flash',
-        history,
         config: {
             systemInstruction: BARTHOLOMEW_CHAT_SYSTEM_INSTRUCTION,
         },
@@ -986,6 +975,50 @@ export const createRoBertoChatSession = (profile: RecipeProfile): Chat => {
         },
     });
 };
+
+const SHOPPING_LIST_PROMPT = `
+You are RoBERTo, an expert AI chef. Your task is to take a list of ingredients from a recipe and convert it into a simple, clean shopping list.
+
+Rules:
+1.  Analyze the provided JSON array of ingredient objects.
+2.  Output a simple JSON array of strings.
+3.  Each string in the output array should represent one item for a shopping list (e.g., "1 cup all-purpose flour").
+4.  Do not add any commentary or extra text. Just provide the clean list.
+`;
+
+const shoppingListSchema = {
+    type: Type.ARRAY,
+    items: {
+        type: Type.STRING,
+        description: "A single item for the shopping list, including amount and name."
+    },
+};
+
+export const generateShoppingList = async (ingredients: RecipeProfile['ingredients']): Promise<string[]> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `${SHOPPING_LIST_PROMPT}\n\nGenerate a shopping list from these ingredients:\n${JSON.stringify(ingredients, null, 2)}`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: shoppingListSchema,
+            },
+        });
+        
+        const jsonString = response.text.trim();
+        const data = JSON.parse(jsonString);
+
+        if (!Array.isArray(data) || data.some(item => typeof item !== 'string')) {
+             throw new Error("Invalid data structure received from API for shopping list.");
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Error generating shopping list:", error);
+        throw new Error("Failed to generate a shopping list. The API might have returned an unexpected format.");
+    }
+};
+
 
 // --- FitBERT Fitness Planner Service ---
 const WORKOUT_PLAN_PROMPT = `

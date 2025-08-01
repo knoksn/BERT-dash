@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Chat } from '@google/genai';
 import { createBartholomewChatSession } from '../services/geminiService';
@@ -16,38 +17,42 @@ const HistoricalInquiryView: React.FC<HistoricalInquiryViewProps> = ({ researchB
   const [isThinking, setIsThinking] = useState(false);
   const chatRef = useRef<Chat | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isInitialMessageSent = useRef(false);
 
   useEffect(() => {
     if (researchBrief) {
         chatRef.current = createBartholomewChatSession(researchBrief);
-        setMessages([]); // Start with a clean slate, initial message will come from the hook
+        isInitialMessageSent.current = false;
+        setMessages([]); // Clear previous messages
     }
   }, [researchBrief]);
   
-  // Effect for handling initial message with potential streaming
   useEffect(() => {
-      if(chatRef.current && messages.length === 0){
-          const sendInitialMessage = async () => {
-              setIsThinking(true);
-              const botMessageId = `bot-${Date.now()}`;
-              setMessages([{id: botMessageId, sender: 'bot', text: ''}]);
-              try {
-                  const stream = await chatRef.current.sendMessageStream({ message: `I'm ready to discuss the case brief for "${researchBrief.topic}".` });
-                  let fullResponse = '';
-                  for await (const chunk of stream) {
-                      fullResponse += chunk.text;
-                      setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: fullResponse } : msg));
-                  }
-              } catch (error) {
-                  console.error("Error sending initial message:", error);
-                  setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: 'An error occurred while starting the session.' } : msg));
-              } finally {
-                  setIsThinking(false);
-              }
-          };
-          sendInitialMessage();
-      }
-  }, [chatRef, messages, researchBrief]);
+      const sendInitialMessage = async () => {
+        if (chatRef.current && !isInitialMessageSent.current && messages.length === 0) {
+            isInitialMessageSent.current = true;
+            setIsThinking(true);
+            const botMessageId = `bot-init-${Date.now()}`;
+            setMessages(prev => [...prev, { id: botMessageId, sender: 'bot', text: '' }]);
+            
+            try {
+                const stream = await chatRef.current.sendMessageStream({ message: `Professor, I'm ready to begin my inquiry into the research brief on "${researchBrief.topic}".` });
+                let fullResponse = '';
+                for await (const chunk of stream) {
+                    fullResponse += chunk.text;
+                    setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: fullResponse } : msg));
+                }
+            } catch (error) {
+                console.error("Error sending initial message:", error);
+                const errorMessage = 'An error occurred while starting the session.';
+                setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: errorMessage } : msg));
+            } finally {
+                setIsThinking(false);
+            }
+        }
+      };
+      sendInitialMessage();
+  }, [messages.length, researchBrief]);
 
 
   const scrollToBottom = () => {

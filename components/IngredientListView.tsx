@@ -1,9 +1,10 @@
 
+
 import React, { useState } from 'react';
 import { RecipeProfile } from '../types';
-import { generateRecipeProfile } from '../services/geminiService';
+import { generateRecipeProfile, generateShoppingList } from '../services/geminiService';
 import LoadingSpinner from './shared/LoadingSpinner';
-import { ChefHatIcon } from './shared/IconComponents';
+import { ChefHatIcon, ClipboardListIcon, CopyIcon, CheckIcon } from './shared/IconComponents';
 import { useCredits } from '../contexts/CreditContext';
 import { TOOL_COSTS } from '../constants';
 
@@ -22,6 +23,12 @@ const IngredientListView: React.FC<IngredientListViewProps> = ({ onProfileGenera
   const [profile, setProfile] = useState<RecipeProfile | null>(null);
   const { credits, spendCredits, showPaywall } = useCredits();
   const cost = TOOL_COSTS['ROBERTO'] ?? 0;
+  
+  const [shoppingList, setShoppingList] = useState<string[] | null>(null);
+  const [isGeneratingList, setIsGeneratingList] = useState(false);
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [isCopied, setIsCopied] = useState(false);
+
 
   const handleGenerate = async () => {
     if (credits < cost) {
@@ -32,6 +39,7 @@ const IngredientListView: React.FC<IngredientListViewProps> = ({ onProfileGenera
     setIsLoading(true);
     setError(null);
     setProfile(null);
+    setShoppingList(null);
     try {
       const result = await generateRecipeProfile({
         ingredients: ingredients || placeholderIngredients,
@@ -43,6 +51,41 @@ const IngredientListView: React.FC<IngredientListViewProps> = ({ onProfileGenera
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateShoppingList = async () => {
+    if (!profile) return;
+
+    setIsGeneratingList(true);
+    setError(null);
+    try {
+        const list = await generateShoppingList(profile.ingredients);
+        setShoppingList(list);
+    } catch(err) {
+        setError(err instanceof Error ? err.message : 'Could not generate shopping list.');
+    } finally {
+        setIsGeneratingList(false);
+    }
+  };
+
+  const handleToggleCheckedItem = (item: string) => {
+    setCheckedItems(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(item)) {
+            newSet.delete(item);
+        } else {
+            newSet.add(item);
+        }
+        return newSet;
+    });
+  };
+
+  const handleCopyList = () => {
+    if (shoppingList) {
+        navigator.clipboard.writeText(shoppingList.join('\n'));
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
     }
   };
 
@@ -116,15 +159,51 @@ const IngredientListView: React.FC<IngredientListViewProps> = ({ onProfileGenera
                         {profile.instructions.map((step, idx) => <li key={idx}>{step}</li>)}
                     </ol>
                 </DisplaySection>
+                 {shoppingList && (
+                    <DisplaySection title="Shopping List">
+                        <div className="flex justify-end mb-2">
+                            <button onClick={handleCopyList} className="text-xs text-dark-text-secondary hover:text-accent flex items-center gap-1.5 transition-colors">
+                                {isCopied ? <CheckIcon className="w-4 h-4 text-green-400" /> : <CopyIcon className="w-4 h-4"/>}
+                                {isCopied ? 'Copied!' : 'Copy List'}
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {shoppingList.map((item, idx) => (
+                                <label key={idx} className="flex items-center gap-3 cursor-pointer">
+                                    <input 
+                                        type="checkbox"
+                                        checked={checkedItems.has(item)}
+                                        onChange={() => handleToggleCheckedItem(item)}
+                                        className="w-5 h-5 bg-gray-700 border-dark-border rounded text-accent focus:ring-accent"
+                                    />
+                                    <span className={checkedItems.has(item) ? 'line-through text-dark-text-secondary' : ''}>
+                                        {item}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    </DisplaySection>
+                 )}
             </div>
-             <p className="text-sm text-dark-text-secondary mt-2">Generated recipe is read-only. You can ask for help in the chat step!</p>
-            <div className="mt-6 flex justify-end">
-                <button
-                    onClick={handleProceed}
-                    className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-500 transition-colors duration-200"
-                >
-                    Proceed to Prep
-                </button>
+            <div className="mt-6 flex justify-between items-center">
+                {!shoppingList && (
+                    <button
+                        onClick={handleGenerateShoppingList}
+                        disabled={isGeneratingList}
+                        className="px-4 py-2 border-2 border-dashed border-dark-border text-dark-text-secondary font-semibold rounded-lg hover:border-accent hover:text-accent flex items-center gap-2 transition-colors duration-200 disabled:opacity-50"
+                    >
+                        {isGeneratingList ? <LoadingSpinner size={20} /> : <ClipboardListIcon className="w-5 h-5" />}
+                        {isGeneratingList ? 'Generating...' : 'Generate Shopping List'}
+                    </button>
+                )}
+                <div className={shoppingList ? 'w-full text-right' : ''}>
+                    <button
+                        onClick={handleProceed}
+                        className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-500 transition-colors duration-200"
+                    >
+                        Proceed to Prep
+                    </button>
+                </div>
             </div>
           </div>
         )}

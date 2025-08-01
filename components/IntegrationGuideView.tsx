@@ -1,8 +1,10 @@
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Chat } from '@google/genai';
 import { createFinanceBertChatSession } from '../services/geminiService';
 import { ChatMessage, PaymentGatewayConfig } from '../types';
-import { ChatBubbleIcon, SendIcon, CreditCardIcon, CheckIcon } from './shared/IconComponents';
+import { ChatBubbleIcon, SendIcon, CreditCardIcon, CheckIcon, CopyIcon } from './shared/IconComponents';
 import LoadingSpinner from './shared/LoadingSpinner';
 
 const CodeBlock: React.FC<{ title: string; language: string; code: string }> = ({ title, language, code }) => {
@@ -21,7 +23,7 @@ const CodeBlock: React.FC<{ title: string; language: string; code: string }> = (
                 <div className="flex justify-between items-center px-4 py-2 bg-dark-border/50">
                     <span className="text-xs font-mono text-dark-text-secondary">{language}</span>
                     <button onClick={handleCopy} className="text-xs text-dark-text-secondary hover:text-accent flex items-center gap-1.5 transition-colors">
-                        {copied ? <CheckIcon className="w-4 h-4 text-green-400" /> : <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>}
+                        {copied ? <CheckIcon className="w-4 h-4 text-green-400" /> : <CopyIcon className="w-4 h-4" />}
                         {copied ? 'Copied!' : 'Copy'}
                     </button>
                 </div>
@@ -116,7 +118,7 @@ const IntegrationGuideView: React.FC<IntegrationGuideViewProps> = ({ gatewayConf
           </div>
           <div className="flex-grow p-4 md:p-6 overflow-y-auto space-y-6">
               <DisplaySection title="API Keys">
-                  {gatewayConfig.apiKeys.map(key => <ApiKeyDisplay key={key.provider} {...key} />)}
+                  {gatewayConfig.apiKeys.map(key => <ApiKeyDisplay key={key.provider} provider={key.provider} publicKey={key.publicKey} secretKey={key.secretKey} />)}
               </DisplaySection>
               <DisplaySection title="Backend Code">
                   <CodeBlock title="server.js" language="javascript" code={gatewayConfig.backendCode} />
